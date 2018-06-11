@@ -1,4 +1,7 @@
-﻿using Nethereum.Geth;
+﻿#define TESTNET
+//#define DEVNET
+
+using Nethereum.Geth;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.TransactionReceipts;
 using Nethereum.Util;
@@ -30,8 +33,10 @@ namespace NethereumTest
             var multiplier = 7;
 
             var transactionHash = await web3Geth.Eth.DeployContract.SendRequestAsync(abi, byteCode, senderAddress, new HexBigInteger(290000), multiplier);
+#if DEVNET
             var mineResult = await web3Geth.Miner.Start.SendRequestAsync(6);
             Assert.False(mineResult);
+#endif
 
             var receipt = await web3Geth.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
             while (receipt == null)
@@ -40,8 +45,10 @@ namespace NethereumTest
                 receipt = await web3Geth.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
             }
 
+#if DEVNET
             mineResult = await web3Geth.Miner.Stop.SendRequestAsync();
             Assert.True(mineResult);
+#endif
 
             var contractAddress = receipt.ContractAddress;
             var contract = web3Geth.Eth.GetContract(abi, contractAddress);
@@ -56,7 +63,7 @@ namespace NethereumTest
         {
             var senderAddress = "0x4f2512dcfea68befebae72eea569c57d87767d45";
             var password = "uuuuuuuu";
-            var receiverAddress = "0x13f022d72158410433cbd66f5dd8bf6d2d129924";
+            var receiverAddress = "0x77f022d72158410433cbd66f5dd8bf6d2d129925";
             //we could use another type of account
             //var privateKey = "0xb5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7";
             //var accountWithPK = new Account(privateKey);
@@ -70,14 +77,22 @@ namespace NethereumTest
             var transactionPolling = new TransactionReceiptPollingService(web3.TransactionManager);
             var currentBalance = await web3.Eth.GetBalance.SendRequestAsync(receiverAddress);
 
+#if DEVNET
             await web3Geth.Miner.Start.SendRequestAsync();
+#endif
 
-            var transactionReceipt = await transactionPolling.SendRequestAndWaitForReceiptAsync(() =>
-                //when more parameters required, pls check the overload with TransactionInput parameter object
-                //Task<string> SendTransactionAsync(TransactionInput transactionInput);
-                web3.TransactionManager.SendTransactionAsync(account.Address, receiverAddress, /*new HexBigInteger(UnitConversion.Convert.ToWei(1))*/ new HexBigInteger(100000)));
+            //var transactionReceipt = await transactionPolling.SendRequestAndWaitForReceiptAsync(() =>
+            //    //when more parameters required, pls check the overload with TransactionInput parameter object
+            //    //Task<string> SendTransactionAsync(TransactionInput transactionInput);
+            //    web3.TransactionManager.SendTransactionAsync(account.Address, receiverAddress, 
+            //        /*new HexBigInteger(UnitConversion.Convert.ToWei(1))*/ new HexBigInteger(100000)));
 
+            var transactionReceipt = await transactionPolling.SendRequestAndWaitForReceiptAsync(
+                new Nethereum.RPC.Eth.DTOs.TransactionInput() { From = account.Address, To = receiverAddress, Value = new HexBigInteger(100000) });
+
+#if DEVNET
             await web3Geth.Miner.Stop.SendRequestAsync();
+#endif
 
             var newBalance = await web3.Eth.GetBalance.SendRequestAsync(receiverAddress);
 
