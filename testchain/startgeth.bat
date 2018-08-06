@@ -3,7 +3,10 @@ RD /S /Q %~dp0\devChain\geth\dapp
 RD /S /Q %~dp0\devChain\geth\nodes
 del %~dp0\devchain\geth\nodekey
 
-cd C:\Projects\Repos\EthereumC\Nethereum\Nethereum\testchain
+rem orig
+rem geth.exe  --datadir=devChain init genesis_dev.json
+rem geth.exe --mine --rpc --ws --networkid=39318 --cache=2048 --maxpeers=0 --datadir=devChain  --ipcpath "geth.ipc"  --rpccorsdomain "*" --rpcapi "eth,web3,personal,net,miner,admin,debug" --verbosity 0 console  
+remcd C:\Projects\Repos\EthereumC\Nethereum\Nethereum\testchain
 REM geth.exe --rinkeby --syncmode "fast" --datadir=devchain --rpc --rpccorsdomain "*" --rpcapi "eth,web3,personal,net,miner,admin,debug" --verbosity 0 console
 rem geth --testnet removedb
 REM geth.exe --testnet --syncmode "fast" --datadir=devchain --rpc --rpccorsdomain "*" --rpcapi "eth,web3,personal,net,miner,admin,debug" --verbosity 0 console
