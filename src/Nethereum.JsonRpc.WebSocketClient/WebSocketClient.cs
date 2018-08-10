@@ -85,20 +85,20 @@ namespace Nethereum.JsonRpc.WebSocketClient
             _log = log;
         }
 
-        private ClientWebSocket GetClientWebSocket()
+        private async Task<ClientWebSocket> GetClientWebSocketAsync()
         {
             try
             {
                 if (_clientWebSocket == null || _clientWebSocket.State != WebSocketState.Open)
                 {
                     _clientWebSocket = new ClientWebSocket();
-                    _clientWebSocket.ConnectAsync(new Uri(Path), new CancellationTokenSource(ConnectionTimeout).Token);
-   
+                    await _clientWebSocket.ConnectAsync(new Uri(Path), new CancellationTokenSource(ConnectionTimeout).Token).ConfigureAwait(false);
+
                 }
             }
             catch (TaskCanceledException ex)
             {
-                throw new RpcClientTimeoutException($"Rpc timeout afer {ConnectionTimeout} milliseconds", ex);
+                throw new RpcClientTimeoutException($"Rpc timeout afer {ConnectionTimeout.TotalMilliseconds} milliseconds", ex);
             }
             catch
             {
@@ -122,7 +122,7 @@ namespace Nethereum.JsonRpc.WebSocketClient
             }
             catch (TaskCanceledException ex)
             {
-                throw new RpcClientTimeoutException($"Rpc timeout afer {ConnectionTimeout} milliseconds", ex);
+                throw new RpcClientTimeoutException($"Rpc timeout afer {ConnectionTimeout.TotalMilliseconds} milliseconds", ex);
             }
         }
 
@@ -151,7 +151,7 @@ namespace Nethereum.JsonRpc.WebSocketClient
             return memoryStream;
         }
 
-        protected async Task<TResponse> SendAsync<TRequest, TResponse>(TRequest request) where TResponse: RpcResponseMessage
+        protected async Task<TResponse> SendAsync<TRequest, TResponse>(TRequest request) where TResponse : RpcResponseMessage
         {
             var logger = new RpcLogger(_log);
             try
@@ -161,9 +161,9 @@ namespace Nethereum.JsonRpc.WebSocketClient
                 var requestBytes = new ArraySegment<byte>(Encoding.UTF8.GetBytes(rpcRequestJson));
                 logger.LogRequest(rpcRequestJson);
                 var cancellationTokenSource = new CancellationTokenSource();
-                cancellationTokenSource.CancelAfter(TimeSpan.FromMilliseconds(ConnectionTimeout));
+                cancellationTokenSource.CancelAfter(ConnectionTimeout);
 
-                var webSocket = GetClientWebSocket();
+                var webSocket = await GetClientWebSocketAsync().ConfigureAwait(false);
                 await webSocket.SendAsync(requestBytes, WebSocketMessageType.Text, true, cancellationTokenSource.Token)
                     .ConfigureAwait(false);
 
@@ -183,7 +183,7 @@ namespace Nethereum.JsonRpc.WebSocketClient
             catch (Exception ex)
             {
                 logger.LogException(ex);
-                throw new RpcClientUnknownException("Error occurred when trying to send ipc requests(s)", ex);
+                throw new RpcClientUnknownException("Error occurred when trying to send web socket requests(s)", ex);
             }
             finally
             {
